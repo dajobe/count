@@ -2,11 +2,21 @@
 #
 # $Source: /home/dajobe/dev/count/repo/count/count,v $
 #
-# $Id: count,v 1.1 1996-10-16 10:12:44 cmdjb Exp $
+# $Id: count,v 1.2 1996-10-16 12:42:52 cmdjb Exp $
 #
 # USAGE:
 #
-#   count <field-no> files...
+#   count <field-ranges> [files...]
+#
+# where <field-ranges> is list of comma-separated ranges of fields of the form 
+# field1-field2, field or '-' for the entire entry. e.g.:
+#
+#  count 0,3,5-7 file
+#  count 0,1
+#  count 2,- file1 file2
+#  count 5 -
+#  count 5
+#  (last two are equivalent)
 #
 # Count the entries in the given whitespace-separated field (from 0)
 # in the given files and report the results, sorted with most populal
@@ -22,50 +32,109 @@ use strict;
 
 use Carp;
 
+warn <<"EOT" and exit 0 if !@ARGV;
+Usage:
+  count <field-ranges> [files...]
+where
+  <field-ranges> is field1-field2, field or '-' for entire line
+  files can include '-' for stdin or assumes '-' if no files given
+EOT
+
 &::main(@ARGV);
 
 exit 0;
 
 
 sub main {
-  my($field_no, @files)=@_;
+  my($field_nos, @files)=@_;
 
-  my $totalc=0;
-  my $maxflen=0;
+  @files='-' if !@files;
+
+  # Parse fields arg to get ranges
+  my(@fields);
+  {
+    # Build list of fields without duplicates
+    my(%fields_seen);
+    foreach (split (/,/, $field_nos)) {
+      if (/^(\d+)-(\d+)$/) {
+	foreach ($1..$2) {
+	  push(@fields, $_), $fields_seen{$_}=1 if !$fields_seen{$_};
+	}
+      } elsif (/^(-|\d+)$/) {
+	push(@fields, $_), $fields_seen{$_}=1 if !$fields_seen{$_};
+      } else {
+	croak "I don't understand range '$_'\n";
+      }
+    }
+  }
 
   my %db;
+  my %totalc;
+  # Init value lengths
+  my %max_valen=map {$_ => 0} @fields; # B5 joke
+
   my $file;
   foreach $file (@files) {
     open (::IN, $file) or carp "Cannot open $file - $!\n", next;
     
     while(<IN>) {
       chop;
-      my($value)=(split(/\s+/))[$field_no];
+      my $field;
+      foreach $field (@fields) {
+	my $value=($field eq '-') ? $_ : (split(/\s+/))[$field];
 
-      next if !defined $value;
+	next if !defined $value;
 
-      $db{$value}++; $totalc++;
+	$db{$field}{$value}++; $totalc{$field}++;
 
-      $maxflen=length($value) if length($value) > $maxflen;
+	$max_valen{$field}=length($value) if length($value) > $max_valen{$field};
+      }
     }
     close(IN);
   }
 
-  my(@order)=sort {$db{$::b} <=> $db{$::a}} keys %db;
-
-  my $maxclen=0;
-  map {$maxclen=length($_) if length($_) > $maxclen} values %db;
-
-  my $format_str       = "%${maxflen}s %${maxclen}d %6.2f%%\n";
-
-  my $field;
-  foreach $field (@order) {
-    my $count=$db{$field};
-    my($pcent)=int(10000*$count/$totalc)/100;
-    print sprintf($format_str, $field, $count, $pcent);
+  # Build count lengths
+  my %max_clen;
+  {
+    my $field;
+    foreach $field (@fields) {
+      $max_clen{$field}=0;
+      my $db_ref=$db{$field};
+      foreach (values %$db_ref) {
+	$max_clen{$field}=length($_) if length($_) > $max_clen{$field}
+      }
+    }
   }
-  print "-" x $maxflen . " " . "-" x $maxclen . " -------\n";
-  print sprintf($format_str, "Total", $totalc, 100.00);
+
+
+  # Output results
+  {
+    my $field;
+    foreach $field (@fields) {
+      my $db_ref=$db{$field};
+
+      print "Summary for field $field\n\n";
+
+      my(@entry_order)=sort {
+	$db_ref->{$::b} <=> $db_ref->{$::a}
+      } keys %$db_ref;
+
+      my $this_max_valen=$max_valen{$field};
+      my $this_max_clen=$max_clen{$field};
+      my $this_totalc=$totalc{$field};
+
+      my $format_str="%${this_max_valen}s %${this_max_clen}d %6.2f%%\n";
+	
+      my $entry;
+      foreach $entry (@entry_order) {
+	my $count=$db_ref->{$entry};
+	my $pcent=int(10000*$count/$this_totalc)/100;
+	print sprintf($format_str, $entry, $count, $pcent);
+      }
+      print "-" x $this_max_valen . " " . "-" x $this_max_clen . " -------\n";
+      print sprintf($format_str, "Total", $this_totalc, 100.00);
+    }
+  }
 }
 
 # Local Variables:
