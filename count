@@ -2,7 +2,7 @@
 #
 # $Source: /home/dajobe/dev/count/repo/count/count,v $
 #
-# $Id: count,v 1.6 2003-08-21 11:11:34 cmdjb Exp $
+# $Id: count,v 1.7 2003-08-21 11:25:36 cmdjb Exp $
 #
 # USAGE:
 #
@@ -29,16 +29,20 @@
 # (C) Copyright 1996-2003 Dave Beckett <D.J.Beckett@bristol.ac.uk>
 #
 
-#use strict;
+use strict;
 
 use Carp;
 
 warn <<"EOT" and exit 0 if !@ARGV;
 Usage:
-  count <field-ranges> [files...]
+  count [--min=NUM] [--histogram] <field-ranges> [files...]
 where
   <field-ranges> is field1-field2, field or '-' for entire line
-  files can include '-' for stdin or assumes '-' if no files given
+     examples: 0,3,5-7  0,1 2 5
+  files can include '-' for stdin or assumes '-' if no files given.
+
+  --min=NUM    restricts the minimum count to show and summarises the rest
+  --histogram  prints histogram of the percentages with '#' symbols
 EOT
 
 &::main(@ARGV);
