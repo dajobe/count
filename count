@@ -1,0 +1,73 @@
+#!/usr/local/gnu/bin/perl -w
+#
+# $Source: /home/dajobe/dev/count/repo/count/count,v $
+#
+# $Id: count,v 1.1 1996-10-16 10:12:44 cmdjb Exp $
+#
+# USAGE:
+#
+#   count <field-no> files...
+#
+# Count the entries in the given whitespace-separated field (from 0)
+# in the given files and report the results, sorted with most populal
+# first in order with percentages and totals.
+#
+# (C) Copyright 1996 Dave Beckett <D.J.Beckett@ukc.ac.uk>
+# University of Kent at Canterbury
+#
+
+require 5.000;
+
+use strict;
+
+use Carp;
+
+&::main(@ARGV);
+
+exit 0;
+
+
+sub main {
+  my($field_no, @files)=@_;
+
+  my $totalc=0;
+  my $maxflen=0;
+
+  my %db;
+  my $file;
+  foreach $file (@files) {
+    open (::IN, $file) or carp "Cannot open $file - $!\n", next;
+    
+    while(<IN>) {
+      chop;
+      my($value)=(split(/\s+/))[$field_no];
+
+      next if !defined $value;
+
+      $db{$value}++; $totalc++;
+
+      $maxflen=length($value) if length($value) > $maxflen;
+    }
+    close(IN);
+  }
+
+  my(@order)=sort {$db{$::b} <=> $db{$::a}} keys %db;
+
+  my $maxclen=0;
+  map {$maxclen=length($_) if length($_) > $maxclen} values %db;
+
+  my $format_str       = "%${maxflen}s %${maxclen}d %6.2f%%\n";
+
+  my $field;
+  foreach $field (@order) {
+    my $count=$db{$field};
+    my($pcent)=int(10000*$count/$totalc)/100;
+    print sprintf($format_str, $field, $count, $pcent);
+  }
+  print "-" x $maxflen . " " . "-" x $maxclen . " -------\n";
+  print sprintf($format_str, "Total", $totalc, 100.00);
+}
+
+# Local Variables:
+# mode: perl
+# End:
