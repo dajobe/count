@@ -2,11 +2,11 @@
 #
 # $Source: /home/dajobe/dev/count/repo/count/count,v $
 #
-# $Id: count,v 1.5 2003-03-24 15:26:38 cmdjb Exp $
+# $Id: count,v 1.6 2003-08-21 11:11:34 cmdjb Exp $
 #
 # USAGE:
 #
-#   count [--min=NUM] <field-ranges> [files...]
+#   count [--min=NUM] [--histogram] <field-ranges> [files...]
 #
 # where <field-ranges> is list of comma-separated ranges of fields of the form 
 # field1-field2, field or '-' for the entire entry. e.g.:
@@ -50,12 +50,25 @@ sub main {
   my(@args)=@_;
 
   my $min=0;
-  while($args[0] =~ /^--(\w+)=(\w+)/) {
+  my $histogram=0;
+
+  my $HIST_WIDTH=60;
+
+  while($args[0] =~ /^--(\w+)=(\w+)$/) {
     my($key,$val)=($1,$2);
     if($key eq 'min') {
       if($val =~ /^\d+/ && $val > 0) {
 	$min=$val;
       }
+    } else {
+      croak "I don't understand $args[0]\n";
+    }
+    shift(@args);
+  }
+  while($args[0] =~ /^--(\w+)$/) {
+    my $key=$1;
+    if($key eq 'histogram') {
+      $histogram=1;
     } else {
       croak "I don't understand $args[0]\n";
     }
@@ -148,7 +161,9 @@ sub main {
       $this_max_valen=length($Total_Label) if length($Total_Label) > $this_max_valen;
       $this_max_clen=length($this_totalc) if length($this_totalc) > $this_max_clen;
 
-      my $format_str="%-${this_max_valen}s %${this_max_clen}d %6.2f%%\n";
+      my $format_str="%-${this_max_valen}s %${this_max_clen}d %6.2f%%";
+      $format_str .= " %s" if $histogram;
+      $format_str .= "\n";
 	
       my $rest_count=0;
       my $rest_entry_count=0;
@@ -164,16 +179,19 @@ sub main {
 	}
 
 	my $pcent=int(10000*$count/$this_totalc)/100;
-	print sprintf($format_str, $entry, $count, $pcent);
+	my $hist='#' x ($HIST_WIDTH*$pcent/100);
+	print sprintf($format_str, $entry, $count, $pcent, $hist);
       }
       
       if($rest_count) {
 	my $pcent=int(10000*$rest_count/$this_totalc)/100;
-	print sprintf($format_str, "remaining $rest_entry_count items", $rest_count, $pcent);
+	my $hist='#' x ($HIST_WIDTH*$pcent/100);
+	print sprintf($format_str, "remaining $rest_entry_count items", $rest_count, $pcent, $hist);
       }
 
       print "-" x $this_max_valen . " " . "-" x $this_max_clen . " -------\n";
-      print sprintf($format_str, "", $this_totalc, 100.00);
+      my $hist='#' x $HIST_WIDTH;
+      print sprintf($format_str, "", $this_totalc, 100.00, $hist);
     }
   }
 }
