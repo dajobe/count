@@ -1,8 +1,8 @@
-#!/usr/local/gnu/bin/perl -w
+#!/usr/local/bin/perl -w
 #
 # $Source: /home/dajobe/dev/count/repo/count/count,v $
 #
-# $Id: count,v 1.2 1996-10-16 12:42:52 cmdjb Exp $
+# $Id: count,v 1.3 1997-02-17 18:27:08 cmdjb Exp $
 #
 # USAGE:
 #
