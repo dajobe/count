@@ -2,11 +2,11 @@
 #
 # $Source: /home/dajobe/dev/count/repo/count/count,v $
 #
-# $Id: count,v 1.4 2003-03-24 15:09:53 cmdjb Exp $
+# $Id: count,v 1.5 2003-03-24 15:26:38 cmdjb Exp $
 #
 # USAGE:
 #
-#   count <field-ranges> [files...]
+#   count [--min=NUM] <field-ranges> [files...]
 #
 # where <field-ranges> is list of comma-separated ranges of fields of the form 
 # field1-field2, field or '-' for the entire entry. e.g.:
@@ -17,6 +17,10 @@
 #  count 5 -
 #  count 5
 #  (last two are equivalent)
+#
+#
+# If --min=NUM is given, only results with MIN or more counts are displayed
+# the rest are summarised in one item.
 #
 # Count the entries in the given whitespace-separated field (from 0)
 # in the given files and report the results, sorted with most populal
@@ -43,7 +47,22 @@ exit 0;
 
 
 sub main {
-  my($field_nos, @files)=@_;
+  my(@args)=@_;
+
+  my $min=0;
+  while($args[0] =~ /^--(\w+)=(\w+)/) {
+    my($key,$val)=($1,$2);
+    if($key eq 'min') {
+      if($val =~ /^\d+/ && $val > 0) {
+	$min=$val;
+      }
+    } else {
+      croak "I don't understand $args[0]\n";
+    }
+    shift(@args);
+  }
+
+  my($field_nos, @files)=@args;
 
   @files='-' if !@files;
 
@@ -131,12 +150,28 @@ sub main {
 
       my $format_str="%-${this_max_valen}s %${this_max_clen}d %6.2f%%\n";
 	
+      my $rest_count=0;
+      my $rest_entry_count=0;
+
       my $entry;
       foreach $entry (@entry_order) {
 	my $count=$db_ref->{$entry};
+
+	if($count < $min) {
+	  $rest_count+= $count;
+	  $rest_entry_count++;
+	  next;
+	}
+
 	my $pcent=int(10000*$count/$this_totalc)/100;
 	print sprintf($format_str, $entry, $count, $pcent);
       }
+      
+      if($rest_count) {
+	my $pcent=int(10000*$rest_count/$this_totalc)/100;
+	print sprintf($format_str, "remaining $rest_entry_count items", $rest_count, $pcent);
+      }
+
       print "-" x $this_max_valen . " " . "-" x $this_max_clen . " -------\n";
       print sprintf($format_str, "", $this_totalc, 100.00);
     }
