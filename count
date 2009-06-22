@@ -1,11 +1,8 @@
 #!/usr/bin/perl -w
 #
-# $Source: /home/dajobe/dev/count/repo/count/count,v $
-#
-# $Id: count,v 1.7 2003-08-21 11:25:36 cmdjb Exp $
+# count - count fields in the input and visualise
 #
 # USAGE:
-#
 #   count [--min=NUM] [--histogram] <field-ranges> [files...]
 #
 # where <field-ranges> is list of comma-separated ranges of fields of the form 
@@ -26,7 +23,7 @@
 # in the given files and report the results, sorted with most populal
 # first in order with percentages and totals.
 #
-# (C) Copyright 1996-2003 Dave Beckett <D.J.Beckett@bristol.ac.uk>
+# (C) Copyright 1996-2009 Dave Beckett <http://www.dajobe.org/>
 #
 
 use strict;
