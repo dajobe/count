@@ -31,4 +31,4 @@ and you can also get a quicker visual histogram:
 		   8 100.00% ############################################################
 
 
-[Dave Beckett][http://www.dajobe.org/]
+[Dave Beckett](http://www.dajobe.org/)
