@@ -7,6 +7,7 @@ For example:
     grep stuff /path/to/apache/combined/log | count FIELD-NUMBER
 
 such as wondering who is causing all the 404s?
+
     $ grep ' 404 ' /path/to/apache/combined.log | count 0
     Summary for field 0
 
@@ -19,6 +20,7 @@ such as wondering who is causing all the 404s?
 		   8 100.00%
 
 and you can also get a quicker visual histogram:
+
     $ grep ' 404 ' /path/to/apache/combined.log | count --histogram 0
     Summary for field 0
 
